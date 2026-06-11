@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { collection, getDocs, query, orderBy, where } from "firebase/firestore";
 import { db } from "@/firebase/firebase.config";
 import AdminShell from "@/components/admin/AdminShell";
@@ -9,6 +10,7 @@ import { BRANDS } from "@/lib/brands";
 import { PenLine } from "lucide-react";
 
 export default function Dashboard() {
+  const router = useRouter();
   const [counts, setCounts] = useState({});
   const [recents, setRecents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,8 +86,8 @@ export default function Dashboard() {
             {BRANDS.map((brand) => {
               const c = counts[brand.id];
               return (
-                <Link key={brand.id} href={`/admin/${brand.id}/blog`}
-                  className="group relative flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
+                <div key={brand.id} onClick={() => router.push(`/admin/${brand.id}/blog`)}
+                  className="group relative flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer">
                   <div className="flex items-center gap-3">
                     <span className={`w-3 h-3 rounded-full flex-shrink-0 ${brand.dot}`} />
                     <span className="font-bold text-slate-900 text-sm">{brand.name}</span>
@@ -112,7 +114,7 @@ export default function Dashboard() {
                     className="absolute top-4 right-4 text-[10px] text-slate-400 hover:text-slate-600 hover:underline">
                     View site ↗
                   </a>
-                </Link>
+                </div>
               );
             })}
           </div>
