@@ -1,0 +1,379 @@
+/**
+ * blog.css
+ *
+ * Single source of truth for blog HTML rendering.
+ * Apply via class="blog-content" on any element that renders blog HTML.
+ *
+ * Works in all three contexts:
+ *   1. BlogManager preview
+ *   2. CKEditor editor area (rich-editor-body)
+ *   3. Public blog post page
+ *
+ * INLINE STYLE PHILOSOPHY:
+ *   Word conversion injects inline styles for non-default values only
+ *   (text-align, color, font-size, background-color).
+ *   This stylesheet never overrides inline styles — only provides defaults
+ *   via element selectors, which inline styles beat by CSS specificity.
+ *   The !important rules on alignment are defensive against Tailwind's
+ *   preflight "text-align: left" reset.
+ */
+
+/* ─── Root ───────────────────────────────────────────────────────────────────── */
+.blog-content {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: 1.0625rem;
+  line-height: 1.85;
+  color: #1f2937;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Headings ───────────────────────────────────────────────────────────────── */
+.blog-content h1,
+.blog-content h2,
+.blog-content h3,
+.blog-content h4,
+.blog-content h5,
+.blog-content h6 {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #111827;
+  margin-top: 1.8em;
+  margin-bottom: 0.65em;
+  scroll-margin-top: 90px;
+}
+
+.blog-content h1 { font-size: 2em; }
+.blog-content h2 { font-size: 1.55em; padding-bottom: 0.3em; border-bottom: 1px solid #f0f0f0; }
+.blog-content h3 { font-size: 1.25em; }
+.blog-content h4 { font-size: 1.1em; }
+.blog-content h5,
+.blog-content h6 { font-size: 1em; color: #374151; }
+
+.blog-content :is(h1, h2, h3, h4, h5, h6):first-child { margin-top: 0; }
+
+/* ─── Paragraphs ─────────────────────────────────────────────────────────────── */
+.blog-content p {
+  margin: 0 0 1.1em;
+}
+
+.blog-content p:last-child { margin-bottom: 0; }
+
+/* ─── Alignment — preserve inline styles from Word ──────────────────────────── */
+.blog-content [style*="text-align:center"],
+.blog-content [style*="text-align: center"]  { text-align: center  !important; }
+.blog-content [style*="text-align:right"],
+.blog-content [style*="text-align: right"]   { text-align: right   !important; }
+.blog-content [style*="text-align:justify"],
+.blog-content [style*="text-align: justify"] { text-align: justify !important; }
+
+/* ─── Inline formatting ──────────────────────────────────────────────────────── */
+.blog-content strong, .blog-content b { font-weight: 700; }
+.blog-content em,     .blog-content i { font-style: italic; }
+.blog-content u   { text-decoration: underline; text-underline-offset: 2px; }
+.blog-content s   { text-decoration: line-through; color: #6b7280; }
+.blog-content sup { vertical-align: super; font-size: 0.75em; line-height: 0; }
+.blog-content sub { vertical-align: sub;   font-size: 0.75em; line-height: 0; }
+
+/* ─── Code ───────────────────────────────────────────────────────────────────── */
+.blog-content code {
+  font-family: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, 'Consolas', monospace;
+  font-size: 0.875em;
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 0.15em 0.45em;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.blog-content pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 1.25em 1.5em;
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: 0.875em;
+  line-height: 1.65;
+  margin: 1.5em 0;
+}
+
+.blog-content pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  white-space: pre;
+}
+
+/* ─── Links ──────────────────────────────────────────────────────────────────── */
+.blog-content a {
+  color: #0d9488;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.blog-content a:hover { color: #0f766e; }
+
+/* ─── Lists ──────────────────────────────────────────────────────────────────── */
+.blog-content ul,
+.blog-content ol {
+  padding-left: 1.6em;
+  margin: 0.6em 0 1.1em;
+}
+
+.blog-content ul  { list-style-type: disc; }
+.blog-content ol  { list-style-type: decimal; }
+.blog-content li  { margin-bottom: 0.4em; line-height: 1.7; }
+
+.blog-content li > ul,
+.blog-content li > ol { margin: 0.3em 0 0; }
+
+.blog-content ul ul    { list-style-type: circle; }
+.blog-content ul ul ul { list-style-type: square; }
+
+/* ─── Images ─────────────────────────────────────────────────────────────────── */
+
+/* All images: never overflow, never distort, never clip */
+.blog-content img {
+  max-width: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain;
+  display: block;
+  margin: 1.5em auto;
+  border-radius: 6px;
+}
+
+/* Inline images (inside paragraphs or list items) — stay inline */
+.blog-content p > img,
+.blog-content li > img {
+  display: inline-block !important;
+  vertical-align: middle;
+  margin: 0.25em 0.25em;
+}
+
+/* Figure with .blog-figure wrapper (Word-converted images) */
+.blog-content figure.blog-figure {
+  display: block;
+  margin: 1.5em auto;
+  text-align: center;
+  max-width: 100%;
+  line-height: 0;
+  overflow: visible;
+}
+
+.blog-content figure.blog-figure img {
+  margin: 0 auto;
+}
+
+/* Standard figures (manually added) */
+.blog-content figure:not(.blog-figure) {
+  margin: 1.5em auto;
+  display: block;
+  text-align: center;
+  overflow: visible;
+}
+
+.blog-content figure img {
+  margin: 0 auto;
+}
+
+.blog-content figcaption {
+  font-size: 0.8125em;
+  color: #6b7280;
+  margin-top: 0.6em;
+  font-style: italic;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ─── Tables ─────────────────────────────────────────────────────────────────── */
+.blog-content .table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.5em 0;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375em;
+  min-width: 360px;
+}
+
+.blog-content th,
+.blog-content td {
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  vertical-align: top;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.blog-content th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  font-size: 0.875em;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.blog-content tr:nth-child(even) td { background-color: #fafafa; }
+.blog-content tr:hover td           { background-color: #f0fdfa; transition: background 0.1s; }
+
+/* ─── Blockquotes ────────────────────────────────────────────────────────────── */
+.blog-content blockquote {
+  border-left: 4px solid #14b8a6;
+  background: #f0fdfa;
+  padding: 1em 1.25em;
+  margin: 1.5em 0;
+  border-radius: 0 10px 10px 0;
+  color: #134e4a;
+  font-style: italic;
+}
+
+.blog-content blockquote.intense {
+  border-left-color: #7c3aed;
+  background: #f5f3ff;
+  color: #4c1d95;
+}
+
+.blog-content blockquote p:last-child { margin-bottom: 0; }
+
+/* ─── HR ─────────────────────────────────────────────────────────────────────── */
+.blog-content hr {
+  border: none;
+  border-top: 2px solid #f0f0f0;
+  margin: 2.5em 0;
+}
+
+.blog-content hr.page-break {
+  border-style: dashed;
+  opacity: 0.3;
+}
+
+/* ─── Minimal layout variant ─────────────────────────────────────────────────── */
+.blog-content--minimal {
+  font-size: 1.125rem;
+  line-height: 2;
+}
+
+.blog-content--minimal h2 {
+  font-size: 1.6em;
+  border-bottom: none;
+  margin-top: 2em;
+}
+
+.blog-content--minimal p {
+  margin-bottom: 1.4em;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .blog-content                    { font-size: 1rem; line-height: 1.75; }
+  .blog-content h1                 { font-size: 1.65em; }
+  .blog-content h2                 { font-size: 1.35em; }
+  .blog-content h3                 { font-size: 1.15em; }
+  .blog-content figure.blog-figure { margin: 1em 0; }
+  .blog-content pre                { font-size: 0.8125em; padding: 1em; }
+  .blog-content th,
+  .blog-content td                 { padding: 8px 10px; }
+}
+
+/* ─── TOC ────────────────────────────────────────────────────────────────────── */
+.toc-nav {
+  font-size: 0.875rem;
+}
+
+.toc-body {
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .toc-body {
+    margin-top: 0;
+  }
+}
+
+/* ─── Rich editor ────────────────────────────────────────────────────────────── */
+.rich-editor-body img {
+  max-width: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain;
+  display: block;
+  margin: 1em auto;
+  border-radius: 6px;
+}
+
+.rich-editor-body figure {
+  margin: 1.5em auto;
+  display: block;
+  overflow: visible;
+}
+
+.rich-editor-body figure img {
+  margin: 0 auto;
+}
+
+.rich-editor-body:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  display: block;
+}
+
+/* ─── Component placeholder chip ────────────────────────────────────────────── */
+.component-placeholder {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border: 2px dashed #34d399;
+  border-radius: 10px;
+  color: #059669;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  user-select: none;
+  cursor: default;
+  margin: 12px 0;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background 0.15s;
+}
+
+.component-placeholder:hover {
+  background: linear-gradient(135deg, #dcfce7, #d1fae5);
+}
+
+.component-placeholder * {
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ─── Input utility ──────────────────────────────────────────────────────────── */
+.input {
+  display: block;
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #1f2937;
+  background: white;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  line-height: 1.5;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #14b8a6;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
