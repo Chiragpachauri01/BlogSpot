@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth } from "@/firebase/firebase.auth";
+import { isAllowedAdminEmail } from "@/lib/allowedAdmins";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -17,7 +18,12 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      if (!isAllowedAdminEmail(user.email)) {
+        await signOut(auth);
+        setError("This account is not allowed to access Blog Master.");
+        return;
+      }
       router.push("/admin/dashboard");
     } catch {
       setError("Invalid email or password.");

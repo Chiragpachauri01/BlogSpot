@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, getIdTokenResult } from "firebase/auth";
+import { onAuthStateChanged, getIdTokenResult, signOut } from "firebase/auth";
 import { auth } from "@/firebase/firebase.auth";
+import { isAllowedAdminEmail } from "@/lib/allowedAdmins";
 import { useRouter } from "next/navigation";
 
 export default function AdminProtected({ children }) {
@@ -13,6 +14,11 @@ export default function AdminProtected({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) { router.replace("/admin/login"); return; }
+      if (!isAllowedAdminEmail(user.email)) {
+        await signOut(auth);
+        router.replace("/admin/login");
+        return;
+      }
       try {
         const tokenResult = await getIdTokenResult(user, true);
         if (!tokenResult.claims.admin) { router.replace("/admin/login"); return; }
