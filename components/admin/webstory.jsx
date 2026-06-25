@@ -36,6 +36,12 @@ const emptyForm = () => ({
   slides: [newSlide()],
 });
 
+// Story images are immutable (each upload gets a unique filename), so cache them
+// hard. Firebase Storage defaults to `private, max-age=0`, which forces a fresh
+// ~1s origin fetch on EVERY view — slow for users and MORE billed downloads.
+// `public, immutable, 1-year` lets browsers + CDNs cache → faster and cheaper.
+const IMG_METADATA = { cacheControl: "public, max-age=31536000, immutable" };
+
 const slugify = (t) =>
   t.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim().replace(/\s+/g, "-");
 
@@ -118,7 +124,7 @@ export default function WebStoryManager({ brand, brandConfig }) {
     const file = e.target.files[0];
     if (!file) return;
     const sRef = ref(storage, `webstories/thumbnails/${Date.now()}.${file.name.split(".").pop()}`);
-    await uploadBytes(sRef, file);
+    await uploadBytes(sRef, file, IMG_METADATA);
     const url = await getDownloadURL(sRef);
     setForm((p) => ({ ...p, thumbnail: url }));
   };
@@ -127,7 +133,7 @@ export default function WebStoryManager({ brand, brandConfig }) {
     const file = e.target.files[0];
     if (!file) return;
     const sRef = ref(storage, `webstories/slides/${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split(".").pop()}`);
-    await uploadBytes(sRef, file);
+    await uploadBytes(sRef, file, IMG_METADATA);
     const url = await getDownloadURL(sRef);
     setSlide(idx, "image", url);
   };
@@ -136,7 +142,7 @@ export default function WebStoryManager({ brand, brandConfig }) {
     const file = e.target.files[0];
     if (!file) return;
     const sRef = ref(storage, `webstories/posters/${Date.now()}.${file.name.split(".").pop()}`);
-    await uploadBytes(sRef, file);
+    await uploadBytes(sRef, file, IMG_METADATA);
     const url = await getDownloadURL(sRef);
     setForm((p) => ({ ...p, posterImage: url }));
   };
