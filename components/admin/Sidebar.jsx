@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/firebase/firebase.auth";
-import { LayoutDashboard, LogOut, Menu, X, PenLine } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, X, PenLine, BookOpen } from "lucide-react";
 import { BRANDS } from "@/lib/brands";
 
 export default function Sidebar() {
@@ -20,7 +20,8 @@ export default function Sidebar() {
 
   const close = () => setIsOpen(false);
 
-  const activeBrandId = BRANDS.find((b) => pathname.includes(`/admin/${b.id}/`))?.id;
+  const activeBrandId   = BRANDS.find((b) => pathname.includes(`/admin/${b.id}/`))?.id;
+  const activeSection   = pathname.includes("/webstory") ? "webstory" : "blog";
 
   return (
     <>
@@ -70,12 +71,12 @@ export default function Sidebar() {
           </Link>
         </nav>
 
-        {/* Brand links */}
+        {/* Blog brand links */}
         <div className="mt-6">
-          <p className="px-3 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Brands</p>
+          <p className="px-3 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Blogs</p>
           <nav className="space-y-1 text-sm font-semibold">
             {BRANDS.map((brand) => {
-              const isActive = activeBrandId === brand.id;
+              const isActive = activeBrandId === brand.id && activeSection === "blog";
               return (
                 <Link key={brand.id} href={`/admin/${brand.id}/blog`} onClick={close}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition ${
@@ -92,15 +93,44 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        {/* New post shortcut */}
+        {/* Web Stories brand links */}
+        <div className="mt-6">
+          <p className="px-3 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Web Stories</p>
+          <nav className="space-y-1 text-sm font-semibold">
+            {BRANDS.map((brand) => {
+              const isActive = activeBrandId === brand.id && activeSection === "webstory";
+              return (
+                <Link key={brand.id} href={`/admin/${brand.id}/webstory`} onClick={close}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition ${
+                    isActive ? "bg-white text-slate-900" : "text-slate-300 hover:bg-white/10"
+                  }`}>
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${brand.dot}`} />
+                  <span>{brand.shortName}</span>
+                  <span className={`ml-auto text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                    isActive ? brand.badge : "opacity-0"
+                  }`}>{brand.logoText}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Quick shortcuts */}
         <div className="mt-6">
           <p className="px-3 text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Quick write</p>
           <nav className="space-y-1 text-sm font-semibold">
             {BRANDS.map((brand) => (
-              <Link key={brand.id} href={`/admin/${brand.id}/blog`} onClick={close}
+              <Link key={`blog-${brand.id}`} href={`/admin/${brand.id}/blog`} onClick={close}
                 className="flex items-center gap-2 rounded-xl px-3 py-2 text-slate-400 hover:bg-white/10 transition text-xs">
                 <PenLine size={13} />
-                <span>{brand.shortName}</span>
+                <span>{brand.shortName} Blog</span>
+              </Link>
+            ))}
+            {BRANDS.map((brand) => (
+              <Link key={`story-${brand.id}`} href={`/admin/${brand.id}/webstory`} onClick={close}
+                className="flex items-center gap-2 rounded-xl px-3 py-2 text-slate-400 hover:bg-white/10 transition text-xs">
+                <BookOpen size={13} />
+                <span>{brand.shortName} Story</span>
               </Link>
             ))}
           </nav>
