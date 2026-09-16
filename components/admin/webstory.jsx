@@ -252,7 +252,7 @@ export default function WebStoryManager({ brand, brandConfig }) {
   // stories by default. Each entry: { ok, msg }.
   const titleWords = form.title.trim().split(/\s+/).filter(Boolean).length;
   const seoChecks = [
-    { ok: !!form.posterImage, msg: "Add a portrait poster image (≥ 640×853). Google needs it for Discover/Visual Stories." },
+    { ok: !!form.posterImage, msg: "Add a portrait poster image (1080×1920, 9:16) — this site also shows it full-bleed in story cards." },
     { ok: form.title.length <= 70 && titleWords <= 10, msg: "Keep the title short (≤ 70 chars / ~10 words) — it gets truncated on the cover." },
     { ok: !!form.shortDescription, msg: "Add a short description — used in cards and meta description." },
     { ok: form.slides.length >= 5, msg: "Aim for at least 5 slides — very short stories rank poorly in Discover." },
@@ -354,11 +354,11 @@ export default function WebStoryManager({ brand, brandConfig }) {
                       i === activeSlide ? "border-indigo-500 bg-indigo-50" : "border-gray-200 bg-white hover:border-gray-300"
                     }`}>
                     {s.image ? (
-                      <div className="w-10 h-14 rounded overflow-hidden flex-shrink-0 bg-gray-100 relative">
+                      <div className="w-10 aspect-[9/16] rounded overflow-hidden flex-shrink-0 bg-gray-100 relative">
                         <Image src={s.image} alt="" fill className="object-cover" />
                       </div>
                     ) : (
-                      <div className="w-10 h-14 rounded flex-shrink-0 bg-gray-100 flex items-center justify-center text-xs text-gray-400">{i + 1}</div>
+                      <div className="w-10 aspect-[9/16] rounded flex-shrink-0 bg-gray-100 flex items-center justify-center text-xs text-gray-400">{i + 1}</div>
                     )}
                     <div className="min-w-0">
                       <p className={`text-xs font-bold truncate ${i === activeSlide ? "text-indigo-700" : "text-gray-700"}`}>
@@ -401,9 +401,10 @@ export default function WebStoryManager({ brand, brandConfig }) {
                     </Field>
 
                     <Field label="Slide Image">
+                      <p className="text-xs text-gray-400 mb-1.5">Use a full-bleed 1080×1920 (9:16) image — it fills the entire screen behind the text, and anything not centered gets cropped off the sides.</p>
                       <input type="file" accept="image/*" onChange={(e) => handleSlideImageUpload(e, activeSlide)} className="text-sm" />
                       {slide.image && (
-                        <div className="mt-2 relative w-40 h-56 rounded-lg overflow-hidden border bg-gray-100">
+                        <div className="mt-2 relative w-40 aspect-[9/16] rounded-lg overflow-hidden border bg-gray-100">
                           <Image src={slide.image} alt="Slide" fill className="object-cover" />
                         </div>
                       )}
@@ -449,9 +450,10 @@ export default function WebStoryManager({ brand, brandConfig }) {
                   placeholder="Short description shown in listings" className="input" />
               </Field>
               <Field label="Thumbnail Image">
+                <p className="text-xs text-gray-400 mb-1.5">Portrait 1080×1920 (9:16) — used as a fallback poster/card image if no Poster Image is set below.</p>
                 <input type="file" accept="image/*" onChange={handleThumbnailUpload} className="text-sm" />
                 {form.thumbnail && (
-                  <div className="mt-2 relative w-40 h-56 rounded-lg overflow-hidden border bg-gray-100">
+                  <div className="mt-2 relative w-40 aspect-[9/16] rounded-lg overflow-hidden border bg-gray-100">
                     <Image src={form.thumbnail} alt="Thumbnail" fill className="object-cover" />
                   </div>
                 )}
@@ -467,11 +469,11 @@ export default function WebStoryManager({ brand, brandConfig }) {
                   placeholder="One-line summary used on related-story cards and meta description" className="input" />
               </Field>
 
-              <Field label="Poster Image (portrait, ≥ 640×853)">
-                <p className="text-xs text-gray-400 mb-1.5">Required by Google for Discover / Visual Stories. Use a tall 3:4 image.</p>
+              <Field label="Poster Image (portrait, 1080×1920)">
+                <p className="text-xs text-gray-400 mb-1.5">Required by Google for Discover / Visual Stories, and shown full-bleed (9:16) in this site's own story cards — use the same 1080×1920 image as your slides, not a 3:4 crop.</p>
                 <input type="file" accept="image/*" onChange={handlePosterUpload} className="text-sm" />
                 {form.posterImage && (
-                  <div className="mt-2 relative w-40 h-56 rounded-lg overflow-hidden border bg-gray-100">
+                  <div className="mt-2 relative w-40 aspect-[9/16] rounded-lg overflow-hidden border bg-gray-100">
                     <Image src={form.posterImage} alt="Poster" fill className="object-cover" />
                   </div>
                 )}
@@ -564,11 +566,11 @@ export default function WebStoryManager({ brand, brandConfig }) {
                   <td className="p-3">
                     <div className="flex items-center gap-3">
                       {story.thumbnail ? (
-                        <div className="relative w-8 h-11 rounded overflow-hidden flex-shrink-0 bg-gray-100">
+                        <div className="relative w-8 aspect-[9/16] rounded overflow-hidden flex-shrink-0 bg-gray-100">
                           <Image src={story.thumbnail} alt="" fill className="object-cover" />
                         </div>
                       ) : (
-                        <div className="w-8 h-11 rounded flex-shrink-0 bg-gray-100 flex items-center justify-center text-xs">📖</div>
+                        <div className="w-8 aspect-[9/16] rounded flex-shrink-0 bg-gray-100 flex items-center justify-center text-xs">📖</div>
                       )}
                       <span className="font-medium text-gray-800 truncate max-w-[180px]">{story.title}</span>
                     </div>
