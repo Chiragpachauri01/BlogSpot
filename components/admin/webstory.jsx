@@ -42,6 +42,50 @@ const emptyForm = () => ({
 // `public, immutable, 1-year` lets browsers + CDNs cache → faster and cheaper.
 const IMG_METADATA = { cacheControl: "public, max-age=31536000, immutable" };
 
+// Resize + JPEG-compress an image in the browser before upload. Phone-camera
+// photos (3000x4000px+, several MB) were being stored and served as-is, which
+// is what made Web Story pages slow to load — amp-story preloads the full-res
+// original for the current + next page on every tap. Slides only ever render
+// at 1080x1920 (9:16), so anything larger is wasted bytes.
+const STORY_IMG_MAX_W = 1080;
+const STORY_IMG_MAX_H = 1920;
+const STORY_IMG_QUALITY = 0.82;
+const STORY_IMG_SKIP_BELOW = 400 * 1024; // already-small files aren't worth re-encoding
+
+async function resizeImage(file) {
+  if (!file.type?.startsWith("image/") || file.type === "image/svg+xml") return file;
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new window.Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = objectUrl;
+    });
+
+    const scale = Math.min(1, STORY_IMG_MAX_W / img.width, STORY_IMG_MAX_H / img.height);
+    if (scale === 1 && file.size <= STORY_IMG_SKIP_BELOW) return file;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff"; // flatten transparency (PNG) before JPEG encoding
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", STORY_IMG_QUALITY));
+    if (!blob || blob.size >= file.size) return file; // compression didn't help — keep original
+
+    return new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
+  } catch {
+    return file; // decoding failed — fall back to the original rather than blocking the upload
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 const slugify = (t) =>
   t.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim().replace(/\s+/g, "-");
 
@@ -123,8 +167,9 @@ export default function WebStoryManager({ brand, brandConfig }) {
   const handleThumbnailUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const sRef = ref(storage, `webstories/thumbnails/${Date.now()}.${file.name.split(".").pop()}`);
-    await uploadBytes(sRef, file, IMG_METADATA);
+    const optimized = await resizeImage(file);
+    const sRef = ref(storage, `webstories/thumbnails/${Date.now()}.${optimized.name.split(".").pop()}`);
+    await uploadBytes(sRef, optimized, IMG_METADATA);
     const url = await getDownloadURL(sRef);
     setForm((p) => ({ ...p, thumbnail: url }));
   };
@@ -132,8 +177,9 @@ export default function WebStoryManager({ brand, brandConfig }) {
   const handleSlideImageUpload = async (e, idx) => {
     const file = e.target.files[0];
     if (!file) return;
-    const sRef = ref(storage, `webstories/slides/${Date.now()}-${Math.random().toString(36).slice(2)}.${file.name.split(".").pop()}`);
-    await uploadBytes(sRef, file, IMG_METADATA);
+    const optimized = await resizeImage(file);
+    const sRef = ref(storage, `webstories/slides/${Date.now()}-${Math.random().toString(36).slice(2)}.${optimized.name.split(".").pop()}`);
+    await uploadBytes(sRef, optimized, IMG_METADATA);
     const url = await getDownloadURL(sRef);
     setSlide(idx, "image", url);
   };
@@ -141,8 +187,9 @@ export default function WebStoryManager({ brand, brandConfig }) {
   const handlePosterUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const sRef = ref(storage, `webstories/posters/${Date.now()}.${file.name.split(".").pop()}`);
-    await uploadBytes(sRef, file, IMG_METADATA);
+    const optimized = await resizeImage(file);
+    const sRef = ref(storage, `webstories/posters/${Date.now()}.${optimized.name.split(".").pop()}`);
+    await uploadBytes(sRef, optimized, IMG_METADATA);
     const url = await getDownloadURL(sRef);
     setForm((p) => ({ ...p, posterImage: url }));
   };
