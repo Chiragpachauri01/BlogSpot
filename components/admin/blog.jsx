@@ -25,7 +25,7 @@ const EMPTY_FORM = {
   showTOC: false, tocPosition: "sidebar",
   authorName: "", authorRole: "", authorBio: "",
   downloadUrl: "", downloadLabel: "", downloadEyebrow: "", downloadDescription: "",
-  downloadButtonText: "", downloadNote: "", downloadImage: "",
+  downloadButtonText: "", downloadNote: "", downloadImage: "", downloadPosition: "top",
 };
 
 const DOWNLOAD_FIELDS = [
@@ -248,6 +248,7 @@ export default function BlogManager({ brand, brandConfig }) {
       showTOC: blog.showTOC ?? false, tocPosition: blog.tocPosition || "sidebar",
       authorName: blog.authorName || "", authorRole: blog.authorRole || "", authorBio: blog.authorBio || "",
       ...Object.fromEntries(DOWNLOAD_FIELDS.map((f) => [f, blog[f] || ""])),
+      downloadPosition: blog.downloadPosition || "top",
       seo: { ...EMPTY_SEO, ...(blog.seo || {}) } });
     setEditingId(blog.id);
     setPhase("editing");
@@ -450,6 +451,13 @@ export default function BlogManager({ brand, brandConfig }) {
                 <Field label="Description">
                   <textarea rows={2} value={form.downloadDescription} onChange={(e) => set("downloadDescription", e.target.value)}
                     placeholder="What the file contains and how to use it" className="input" />
+                </Field>
+                <Field label="Card Position">
+                  <select value={form.downloadPosition} onChange={(e) => set("downloadPosition", e.target.value)} className="input w-auto">
+                    <option value="top">Above the article</option>
+                    <option value="bottom">Below the article</option>
+                    <option value="both">Above and below</option>
+                  </select>
                 </Field>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Button Text">

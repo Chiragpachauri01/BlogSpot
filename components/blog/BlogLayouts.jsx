@@ -118,9 +118,14 @@ function MetaLine({ blog }) {
 // Optional CMS download card (e.g. the printable Diwali checklist PDF), shown
 // above the article. Only downloadUrl is required; every text has a default.
 // Preview image: thumbnail of the file (left on desktop, on top on mobile).
-function DownloadBox({ blog }) {
+// `at` is where this instance sits ("top" = above the article, "bottom" = after
+// it); blog.downloadPosition ("top" | "bottom" | "both", default "top") picks
+// which instance renders.
+function DownloadBox({ blog, at }) {
   const url = safeDownloadUrl(blog.downloadUrl);
   if (!url) return null;
+  const position = ["top", "bottom", "both"].includes(blog.downloadPosition) ? blog.downloadPosition : "top";
+  if (position !== "both" && position !== at) return null;
   const isPdf   = /\.pdf(?:$|[?#])/i.test(url);
   const image   = safeDownloadUrl(blog.downloadImage);
   const eyebrow = blog.downloadEyebrow     || (isPdf ? "Free printable · PDF" : "Free download");
@@ -275,10 +280,11 @@ function DefaultLayout({ blog, allPosts }) {
       <div className={`${hasSidebar ? "max-w-6xl flex gap-10 items-start" : "max-w-3xl"} mx-auto px-4 sm:px-6 pb-8`}>
         {hasSidebar && <TableOfContents toc={toc} position="sidebar" />}
         <div className={hasSidebar ? "flex-1 min-w-0" : undefined}>
-          <DownloadBox blog={blog} />
+          <DownloadBox blog={blog} at="top" />
           <section aria-label="Article content">
             <ContentBlock html={blog.content || ""} />
           </section>
+          <DownloadBox blog={blog} at="bottom" />
           <ContactCTA />
           <BlogFooter blog={blog} url={canonical} />
         </div>
@@ -324,10 +330,11 @@ function MinimalLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-8" />
         )}
-        <DownloadBox blog={blog} />
+        <DownloadBox blog={blog} at="top" />
         <section aria-label="Article content">
           <ContentBlock html={blog.content || ""} />
         </section>
+        <DownloadBox blog={blog} at="bottom" />
         <ContactCTA />
         <BlogFooter blog={blog} url={canonical} />
       </div>
@@ -391,10 +398,11 @@ function MagazineLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-8" />
         )}
-        <DownloadBox blog={blog} />
+        <DownloadBox blog={blog} at="top" />
         <section aria-label="Article content">
           <ContentBlock html={blog.content || ""} />
         </section>
+        <DownloadBox blog={blog} at="bottom" />
         <ContactCTA />
         <BlogFooter blog={blog} url={canonical} />
       </div>
@@ -448,10 +456,11 @@ function DocsLayout({ blog, allPosts }) {
                 sizes="(max-width: 1280px) 100vw, 900px" className="object-contain" />
             </div>
           )}
-          <DownloadBox blog={blog} />
+          <DownloadBox blog={blog} at="top" />
           <section aria-label="Article content">
             <ContentBlock html={blog.content || ""} />
           </section>
+          <DownloadBox blog={blog} at="bottom" />
           <ContactCTA />
           <BlogFooter blog={blog} url={canonical} />
           <RelatedPosts blog={blog} allPosts={allPosts} />
@@ -499,7 +508,7 @@ function CardsLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-6" />
         )}
-        <DownloadBox blog={blog} />
+        <DownloadBox blog={blog} at="top" />
         <div className="space-y-5">
           {sections.map((section, i) => (
             <article key={i} id={section.id || undefined}
@@ -513,6 +522,7 @@ function CardsLayout({ blog, allPosts }) {
             </article>
           ))}
         </div>
+        <DownloadBox blog={blog} at="bottom" />
         <ContactCTA />
         <div className="bg-white rounded-2xl p-6 sm:p-8 mt-6 border border-gray-100 shadow-sm">
           <BlogFooter blog={blog} url={canonical} />
@@ -580,10 +590,11 @@ function HeroLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-10" />
         )}
-        <DownloadBox blog={blog} />
+        <DownloadBox blog={blog} at="top" />
         <section aria-label="Article content">
           <ContentBlock html={blog.content || ""} />
         </section>
+        <DownloadBox blog={blog} at="bottom" />
         <ContactCTA />
         <BlogFooter blog={blog} url={canonical} />
       </div>
@@ -634,7 +645,7 @@ function TimelineLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-8" />
         )}
-        <DownloadBox blog={blog} />
+        <DownloadBox blog={blog} at="top" />
         {intro?.html && (
           <ContentBlock html={intro.html} className="mb-12" />
         )}
@@ -654,6 +665,7 @@ function TimelineLayout({ blog, allPosts }) {
             ))}
           </ol>
         )}
+        <DownloadBox blog={blog} at="bottom" />
         <ContactCTA />
         <BlogFooter blog={blog} url={canonical} />
       </div>
