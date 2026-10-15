@@ -98,6 +98,8 @@ export function sanitizeHtml(html) {
 export const INJECTABLE_COMPONENTS = [
     { name: "BookingForm", icon: "📅", label: "Booking Form" },
     { name: "ServiceCards", icon: "🃏", label: "Service Cards" },
+    // Renders the post's Download card (Content tab → Download card) right here.
+    { name: "DownloadCard", icon: "📥", label: "Download Card" },
 ];
 
 // ─── Toolbar primitives ──────────────────────────────────────────────────────
