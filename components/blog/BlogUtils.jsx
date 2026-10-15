@@ -215,3 +215,13 @@ export function isMeaningfullyUpdated(createdAt, updatedAt) {
   if (isNaN(created) || isNaN(updated)) return false;
   return updated - created > 24 * 60 * 60 * 1000;
 }
+
+// ─── Download link ────────────────────────────────────────────────────────────
+// Only same-site paths ("/downloads/x.pdf") or http(s) URLs are allowed for the
+// CMS "download" button, so a typo or a javascript: URL can never be rendered.
+export function safeDownloadUrl(url) {
+  const v = (url || "").trim();
+  if (!v) return "";
+  if (v.startsWith("/") && !v.startsWith("//")) return v;
+  return /^https?:\/\/[^\s]+$/i.test(v) ? v : "";
+}

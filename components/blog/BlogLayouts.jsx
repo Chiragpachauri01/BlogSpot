@@ -23,7 +23,7 @@ import Image from "next/image";
 import Link  from "next/link";
 import {
   generateTOC, getRelatedPosts, formatDate, calcReadingTime,
-  splitIntoSections, isMeaningfullyUpdated,
+  splitIntoSections, isMeaningfullyUpdated, safeDownloadUrl,
 } from "./BlogUtils";
 import BlogCard            from "./BlogCard";
 import ShareBar            from "./SharebBar";
@@ -112,6 +112,29 @@ function MetaLine({ blog }) {
       <span aria-hidden>·</span>
       <span>{rt} min read</span>
     </div>
+  );
+}
+
+// Optional CMS download (e.g. a printable checklist PDF), shown above the article.
+function DownloadBox({ blog }) {
+  const url = safeDownloadUrl(blog.downloadUrl);
+  if (!url) return null;
+  const isPdf = /\.pdf(?:$|[?#])/i.test(url);
+  const label = blog.downloadLabel || (isPdf ? "Download the printable version (PDF)" : "Download");
+  return (
+    <aside aria-label="Download" className="my-8 flex flex-col gap-4 rounded-2xl border border-teal-100 bg-teal-50 p-5 sm:flex-row sm:items-center sm:p-6">
+      <div className="min-w-0 flex-1">
+        <p className="font-bold text-gray-900">{label}</p>
+        <p className="mt-1 text-sm text-gray-600">Free to download{isPdf ? " and print" : ""}.</p>
+      </div>
+      <a href={url} target="_blank" rel="noopener" {...(isPdf && { download: "" })}
+        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-700">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+          <path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M2.5 13.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Download{isPdf ? " PDF" : ""}
+      </a>
+    </aside>
   );
 }
 
@@ -233,6 +256,7 @@ function DefaultLayout({ blog, allPosts }) {
       <div className={`${hasSidebar ? "max-w-6xl flex gap-10 items-start" : "max-w-3xl"} mx-auto px-4 sm:px-6 pb-8`}>
         {hasSidebar && <TableOfContents toc={toc} position="sidebar" />}
         <div className={hasSidebar ? "flex-1 min-w-0" : undefined}>
+          <DownloadBox blog={blog} />
           <section aria-label="Article content">
             <ContentBlock html={blog.content || ""} />
           </section>
@@ -281,6 +305,7 @@ function MinimalLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-8" />
         )}
+        <DownloadBox blog={blog} />
         <section aria-label="Article content">
           <ContentBlock html={blog.content || ""} />
         </section>
@@ -347,6 +372,7 @@ function MagazineLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-8" />
         )}
+        <DownloadBox blog={blog} />
         <section aria-label="Article content">
           <ContentBlock html={blog.content || ""} />
         </section>
@@ -403,6 +429,7 @@ function DocsLayout({ blog, allPosts }) {
                 sizes="(max-width: 1280px) 100vw, 900px" className="object-contain" />
             </div>
           )}
+          <DownloadBox blog={blog} />
           <section aria-label="Article content">
             <ContentBlock html={blog.content || ""} />
           </section>
@@ -453,6 +480,7 @@ function CardsLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-6" />
         )}
+        <DownloadBox blog={blog} />
         <div className="space-y-5">
           {sections.map((section, i) => (
             <article key={i} id={section.id || undefined}
@@ -533,6 +561,7 @@ function HeroLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-10" />
         )}
+        <DownloadBox blog={blog} />
         <section aria-label="Article content">
           <ContentBlock html={blog.content || ""} />
         </section>
@@ -586,6 +615,7 @@ function TimelineLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-8" />
         )}
+        <DownloadBox blog={blog} />
         {intro?.html && (
           <ContentBlock html={intro.html} className="mb-12" />
         )}

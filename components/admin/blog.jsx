@@ -11,7 +11,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Image from "next/image";
 import { BlogDetailLayout } from "@/components/blog/BlogLayouts";
-import { BLOG_LAYOUTS, addIdsToHeadings } from "@/components/blog/BlogUtils";
+import { BLOG_LAYOUTS, addIdsToHeadings, safeDownloadUrl } from "@/components/blog/BlogUtils";
 import RichEditor from "@/components/blog/RichEditor";
 
 const EMPTY_SEO = {
@@ -24,6 +24,7 @@ const EMPTY_FORM = {
   tags: [], seo: { ...EMPTY_SEO },
   showTOC: false, tocPosition: "sidebar",
   authorName: "", authorRole: "", authorBio: "",
+  downloadUrl: "", downloadLabel: "",
 };
 
 const slugify = (t) =>
@@ -233,6 +234,7 @@ export default function BlogManager({ brand, brandConfig }) {
     setForm({ ...blog, tags: blog.tags || [], layout: blog.layout || "default",
       showTOC: blog.showTOC ?? false, tocPosition: blog.tocPosition || "sidebar",
       authorName: blog.authorName || "", authorRole: blog.authorRole || "", authorBio: blog.authorBio || "",
+      downloadUrl: blog.downloadUrl || "", downloadLabel: blog.downloadLabel || "",
       seo: { ...EMPTY_SEO, ...(blog.seo || {}) } });
     setEditingId(blog.id);
     setPhase("editing");
@@ -408,6 +410,17 @@ export default function BlogManager({ brand, brandConfig }) {
                 <textarea rows={2} maxLength={300} value={form.authorBio} onChange={(e) => set("authorBio", e.target.value)}
                   placeholder="1–2 sentences on the author's experience" className="input" />
               </Field>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Download Link" hint="Optional — shows a download box above the article, e.g. /downloads/checklist.pdf"
+                  hintRed={Boolean(form.downloadUrl) && !safeDownloadUrl(form.downloadUrl)}>
+                  <input value={form.downloadUrl} onChange={(e) => set("downloadUrl", e.target.value)}
+                    placeholder="/downloads/file.pdf or https://…" className="input font-mono text-sm" />
+                </Field>
+                <Field label="Download Button Text">
+                  <input value={form.downloadLabel} onChange={(e) => set("downloadLabel", e.target.value)}
+                    placeholder="e.g. Download the printable Diwali checklist (PDF)" className="input" />
+                </Field>
+              </div>
               <Field label="Tags">
                 <div className="flex flex-wrap gap-2 mb-2">
                   {(form.tags || []).map((t) => (
