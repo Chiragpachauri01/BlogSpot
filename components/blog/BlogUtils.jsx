@@ -225,3 +225,15 @@ export function safeDownloadUrl(url) {
   if (v.startsWith("/") && !v.startsWith("//")) return v;
   return /^https?:\/\/[^\s]+$/i.test(v) ? v : "";
 }
+
+// ─── Tables ───────────────────────────────────────────────────────────────────
+// Wide tables must scroll inside their own box on phones instead of stretching
+// the page. Word-converted tables already come wrapped in .table-wrapper;
+// pasted or hand-made ones don't, so wrap any table that isn't.
+export function wrapTables(html = "") {
+  if (!html || !/<table\b/i.test(html)) return html;
+  return html.replace(
+    /(<div\b[^>]*\bclass\s*=\s*["'][^"']*\btable-wrapper\b[^"']*["'][^>]*>\s*)?(<table\b[\s\S]*?<\/table>)/gi,
+    (match, wrapper, table) => (wrapper ? match : `<div class="table-wrapper">${table}</div>`)
+  );
+}

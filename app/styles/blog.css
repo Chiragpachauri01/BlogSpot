@@ -200,10 +200,20 @@
 }
 
 .blog-content table {
-  width: 100%;
+  width: 100% !important;  /* override fixed widths pasted from Word / Google Docs */
+  max-width: none;
+  height: auto !important;
   border-collapse: collapse;
   font-size: 0.9375em;
-  min-width: 360px;
+  min-width: 360px;        /* below this the .table-wrapper scrolls instead */
+}
+
+/* Pasted cells often carry fixed widths (style="width:200pt" / width="300");
+   let the browser size columns to the screen so text wraps. */
+.blog-content th,
+.blog-content td {
+  width: auto !important;
+  min-width: 0 !important;
 }
 
 .blog-content th,
