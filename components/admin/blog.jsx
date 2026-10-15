@@ -453,11 +453,12 @@ export default function BlogManager({ brand, brandConfig }) {
                     placeholder="What the file contains and how to use it" className="input" />
                 </Field>
                 <Field label="Card Position"
-                  hint="To place it anywhere else, insert a “Download Card” block in the content (⚡ Component menu in the editor) — that spot then replaces this setting.">
+                  hint="To also show it at an exact spot, insert a “Download Card” block in the content (⚡ Component menu in the editor). Pick “Not above or below” to show it only there.">
                   <select value={form.downloadPosition} onChange={(e) => set("downloadPosition", e.target.value)} className="input w-auto">
                     <option value="top">Above the article</option>
                     <option value="bottom">Below the article</option>
                     <option value="both">Above and below</option>
+                    <option value="none">Not above or below (only where inserted)</option>
                   </select>
                 </Field>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
