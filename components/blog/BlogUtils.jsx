@@ -80,19 +80,26 @@ export function generateTOC(html = "") {
 }
 
 // Regex-based — works on both server (SSR/ISR) and client.
+// Adds a slug id to every h1–h4 that lacks one, so TOC anchors resolve.
+// Generated ids are unique within the document ("faq", "faq-2", …) and never
+// collide with ids already present in the HTML.
 export function addIdsToHeadings(html) {
   if (!html) return html;
+  const used = new Set();
+  for (const m of html.matchAll(/\sid\s*=\s*["']([^"']+)["']/gi)) used.add(m[1]);
   let i = 0;
   return html.replace(
-    /<(h[1-4])((?:\s[^>]*)?)?>([\s\S]*?)<\/h\1>/gi,
+    /<(h[1-4])((?:\s[^>]*)?)>([\s\S]*?)<\/\1>/gi,
     (match, tag, attrs = "", inner) => {
-      if (/\bid\s*=/i.test(attrs)) return match;
-      const text = inner
+      if (/(?:^|\s)id\s*=/i.test(attrs)) return match;
+      const base = inner
         .replace(/<[^>]+>/g, "")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-      const id = text || `heading-${i++}`;
+        .replace(/(^-|-$)/g, "") || `heading-${i++}`;
+      let id = base;
+      for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
+      used.add(id);
       return `<${tag}${attrs} id="${id}">${inner}</${tag}>`;
     }
   );
