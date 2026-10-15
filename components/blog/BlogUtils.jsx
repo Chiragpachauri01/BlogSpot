@@ -198,3 +198,13 @@ export function splitIntoSections(html) {
   }
   return sections;
 }
+// ─── Freshness ────────────────────────────────────────────────────────────────
+// True when the post was edited more than a day after it was first published,
+// so same-day typo fixes don't show an "Updated" label.
+export function isMeaningfullyUpdated(createdAt, updatedAt) {
+  if (!createdAt || !updatedAt) return false;
+  const created = new Date(createdAt).getTime();
+  const updated = new Date(updatedAt).getTime();
+  if (isNaN(created) || isNaN(updated)) return false;
+  return updated - created > 24 * 60 * 60 * 1000;
+}

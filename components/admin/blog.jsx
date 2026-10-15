@@ -23,6 +23,7 @@ const EMPTY_FORM = {
   image: "", status: "draft", layout: "default",
   tags: [], seo: { ...EMPTY_SEO },
   showTOC: false, tocPosition: "sidebar",
+  authorName: "", authorRole: "", authorBio: "",
 };
 
 const slugify = (t) =>
@@ -102,9 +103,10 @@ const revalidateBlog = async (brand, slug) => {
   }
 };
 
-function buildPreviewBlog(form) {
+function buildPreviewBlog(form, orgName) {
   return {
     ...form,
+    orgName,
     id: "__preview__",
     status: "published",
     createdAt: new Date().toISOString(),
@@ -186,8 +188,16 @@ export default function BlogManager({ brand, brandConfig }) {
     setForm((p) => ({ ...p, image: url }));
   };
 
+  // Slug of the post as stored in Firestore (empty for new posts). Once a post
+  // has a saved slug it is its live URL, so title edits must not change it.
+  const savedSlug = editingId ? blogs.find((b) => b.id === editingId)?.slug || "" : "";
+
   const set = (field, value) =>
-    setForm((p) => ({ ...p, [field]: value, ...(field === "title" ? { slug: slugify(value) } : {}) }));
+    setForm((p) => ({
+      ...p,
+      [field]: value,
+      ...(field === "title" && !savedSlug ? { slug: slugify(value) } : {}),
+    }));
 
   const setSeo = (field, value) =>
     setForm((p) => ({ ...p, seo: { ...p.seo, [field]: value } }));
@@ -222,6 +232,7 @@ export default function BlogManager({ brand, brandConfig }) {
   const handleEdit = (blog) => {
     setForm({ ...blog, tags: blog.tags || [], layout: blog.layout || "default",
       showTOC: blog.showTOC ?? false, tocPosition: blog.tocPosition || "sidebar",
+      authorName: blog.authorName || "", authorRole: blog.authorRole || "", authorBio: blog.authorBio || "",
       seo: { ...EMPTY_SEO, ...(blog.seo || {}) } });
     setEditingId(blog.id);
     setPhase("editing");
@@ -331,7 +342,7 @@ export default function BlogManager({ brand, brandConfig }) {
             </div>
           </div>
           <div className="border rounded-2xl overflow-hidden shadow-sm bg-white">
-            <BlogDetailLayout blog={buildPreviewBlog(form)} allPosts={[]} />
+            <BlogDetailLayout blog={buildPreviewBlog(form, brandConfig?.name)} allPosts={[]} />
           </div>
         </div>
       )}
@@ -382,6 +393,20 @@ export default function BlogManager({ brand, brandConfig }) {
               <Field label="Excerpt">
                 <textarea rows={3} value={form.excerpt} onChange={(e) => set("excerpt", e.target.value)}
                   placeholder="Short description shown in listings" className="input" />
+              </Field>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Author Name" hint="Optional — leave empty to credit the brand">
+                  <input value={form.authorName} onChange={(e) => set("authorName", e.target.value)}
+                    placeholder="e.g. Priya Sharma" className="input" />
+                </Field>
+                <Field label="Author Role">
+                  <input value={form.authorRole} onChange={(e) => set("authorRole", e.target.value)}
+                    placeholder="e.g. Cleaning Operations Lead" className="input" />
+                </Field>
+              </div>
+              <Field label="Author Bio" hint={`Short bio shown under the post (${(form.authorBio || "").length}/300)`}>
+                <textarea rows={2} maxLength={300} value={form.authorBio} onChange={(e) => set("authorBio", e.target.value)}
+                  placeholder="1–2 sentences on the author's experience" className="input" />
               </Field>
               <Field label="Tags">
                 <div className="flex flex-wrap gap-2 mb-2">
@@ -462,7 +487,7 @@ export default function BlogManager({ brand, brandConfig }) {
                 )}
               </div>
               <div className="border-2 border-indigo-100 rounded-2xl overflow-hidden bg-white shadow-sm" style={{ maxHeight: "70vh", overflowY: "auto" }}>
-                <BlogDetailLayout blog={buildPreviewBlog(form)} allPosts={[]} />
+                <BlogDetailLayout blog={buildPreviewBlog(form, brandConfig?.name)} allPosts={[]} />
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <select value={form.status} onChange={(e) => set("status", e.target.value)} className="input w-auto">
