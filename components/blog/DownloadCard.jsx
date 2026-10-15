@@ -13,6 +13,8 @@ import { safeDownloadUrl } from "./BlogUtils";
 
 export const BlogDataContext = createContext(null);
 
+export const DOWNLOAD_POSITIONS = ["top", "bottom", "both", "none"];
+
 const INLINE_RE = /data-component\s*=\s*["']DownloadCard["']/i;
 
 export function hasInlineDownload(html = "") {
@@ -24,16 +26,16 @@ export function hasInlineDownload(html = "") {
 // Preview image: thumbnail of the file (left on desktop, on top on mobile).
 // `at` is where this instance sits: "top" (above the article), "bottom" (after
 // it) or "inline" (a Download Card block placed in the content by the editor).
-// blog.downloadPosition ("top" | "bottom" | "both", default "top") picks which
-// of top/bottom renders, unless the content has an inline block.
+// blog.downloadPosition ("top" | "bottom" | "both" | "none", default "top")
+// picks which of top/bottom renders; inline blocks always render.
 export function DownloadBox({ blog, at }) {
   const url = safeDownloadUrl(blog.downloadUrl);
   if (!url) return null;
   if (at !== "inline") {
-    // A Download Card block inserted in the content wins over above/below.
-    if (hasInlineDownload(blog.content)) return null;
-    const position = ["top", "bottom", "both"].includes(blog.downloadPosition) ? blog.downloadPosition : "top";
-    if (position !== "both" && position !== at) return null;
+    // Card Position only controls the above/below cards; a Download Card block
+    // inserted in the content always renders too (the publisher's choice).
+    const position = DOWNLOAD_POSITIONS.includes(blog.downloadPosition) ? blog.downloadPosition : "top";
+    if (position === "none" || (position !== "both" && position !== at)) return null;
   }
   const isPdf   = /\.pdf(?:$|[?#])/i.test(url);
   const image   = safeDownloadUrl(blog.downloadImage);

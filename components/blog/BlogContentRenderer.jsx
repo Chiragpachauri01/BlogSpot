@@ -35,11 +35,14 @@ export default function BlogContentRenderer({ html = "", className = "" }) {
   if (!html) return null;
 
   const tokens = tokenize(wrapTables(html));
+  // Only the article-text segments get .blog-content: injected components
+  // (Download Card…) keep their own fonts, colours and spacing instead of
+  // inheriting the article's serif text and teal links.
   return (
-    <div className={`blog-content ${className}`}>
+    <div className={className || undefined}>
       {tokens.map((token, i) => {
         if (token.type === "html") {
-          return <div key={i} dangerouslySetInnerHTML={{ __html: token.value }} />;
+          return <div className="blog-content" key={i} dangerouslySetInnerHTML={{ __html: token.value }} />;
         }
         const Component = COMPONENT_MAP[token.value];
         if (!Component) return null;
