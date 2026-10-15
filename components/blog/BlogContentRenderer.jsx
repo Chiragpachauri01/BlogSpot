@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { wrapTables } from "./BlogUtils";
 import ContactCTA from "./ContactCTA";
 
 const COMPONENT_MAP = {
@@ -31,7 +32,7 @@ function tokenize(html) {
 export default function BlogContentRenderer({ html = "", className = "" }) {
   if (!html) return null;
 
-  const tokens = tokenize(html);
+  const tokens = tokenize(wrapTables(html));
   return (
     <div className={`blog-content ${className}`}>
       {tokens.map((token, i) => {
