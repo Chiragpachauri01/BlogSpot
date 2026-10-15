@@ -24,8 +24,14 @@ const EMPTY_FORM = {
   tags: [], seo: { ...EMPTY_SEO },
   showTOC: false, tocPosition: "sidebar",
   authorName: "", authorRole: "", authorBio: "",
-  downloadUrl: "", downloadLabel: "",
+  downloadUrl: "", downloadLabel: "", downloadEyebrow: "", downloadDescription: "",
+  downloadButtonText: "", downloadNote: "", downloadImage: "",
 };
+
+const DOWNLOAD_FIELDS = [
+  "downloadUrl", "downloadLabel", "downloadEyebrow", "downloadDescription",
+  "downloadButtonText", "downloadNote", "downloadImage",
+];
 
 const slugify = (t) =>
   t.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim().replace(/\s+/g, "-");
@@ -104,10 +110,17 @@ const revalidateBlog = async (brand, slug) => {
   }
 };
 
-function buildPreviewBlog(form, orgName) {
+// Site-relative paths ("/downloads/x.pdf") live on the public site, not on
+// Blog Master, so resolve them against the brand's siteUrl for the preview.
+const toSiteUrl = (path, siteUrl) =>
+  path && path.startsWith("/") && !path.startsWith("//") && siteUrl ? siteUrl.replace(/\/$/, "") + path : path;
+
+function buildPreviewBlog(form, orgName, siteUrl) {
   return {
     ...form,
     orgName,
+    downloadUrl:   toSiteUrl(form.downloadUrl, siteUrl),
+    downloadImage: toSiteUrl(form.downloadImage, siteUrl),
     id: "__preview__",
     status: "published",
     createdAt: new Date().toISOString(),
@@ -234,7 +247,7 @@ export default function BlogManager({ brand, brandConfig }) {
     setForm({ ...blog, tags: blog.tags || [], layout: blog.layout || "default",
       showTOC: blog.showTOC ?? false, tocPosition: blog.tocPosition || "sidebar",
       authorName: blog.authorName || "", authorRole: blog.authorRole || "", authorBio: blog.authorBio || "",
-      downloadUrl: blog.downloadUrl || "", downloadLabel: blog.downloadLabel || "",
+      ...Object.fromEntries(DOWNLOAD_FIELDS.map((f) => [f, blog[f] || ""])),
       seo: { ...EMPTY_SEO, ...(blog.seo || {}) } });
     setEditingId(blog.id);
     setPhase("editing");
@@ -344,7 +357,7 @@ export default function BlogManager({ brand, brandConfig }) {
             </div>
           </div>
           <div className="border rounded-2xl overflow-hidden shadow-sm bg-white">
-            <BlogDetailLayout blog={buildPreviewBlog(form, brandConfig?.name)} allPosts={[]} />
+            <BlogDetailLayout blog={buildPreviewBlog(form, brandConfig?.name, brandConfig?.siteUrl)} allPosts={[]} />
           </div>
         </div>
       )}
@@ -410,17 +423,45 @@ export default function BlogManager({ brand, brandConfig }) {
                 <textarea rows={2} maxLength={300} value={form.authorBio} onChange={(e) => set("authorBio", e.target.value)}
                   placeholder="1–2 sentences on the author's experience" className="input" />
               </Field>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Download Link" hint="Optional — shows a download box above the article, e.g. /downloads/checklist.pdf"
-                  hintRed={Boolean(form.downloadUrl) && !safeDownloadUrl(form.downloadUrl)}>
-                  <input value={form.downloadUrl} onChange={(e) => set("downloadUrl", e.target.value)}
-                    placeholder="/downloads/file.pdf or https://…" className="input font-mono text-sm" />
+              <fieldset className="space-y-4 rounded-xl border p-4">
+                <legend className="px-1 text-sm font-semibold text-gray-700">Download card (optional)</legend>
+                <p className="text-xs text-gray-500">Shown above the article when a link is set. Leave the other fields empty to use defaults.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Download Link" hint={form.downloadUrl && !safeDownloadUrl(form.downloadUrl)
+                      ? "Use a site path starting with / or an https:// link" : "e.g. /downloads/checklist.pdf"}
+                    hintRed={Boolean(form.downloadUrl) && !safeDownloadUrl(form.downloadUrl)}>
+                    <input value={form.downloadUrl} onChange={(e) => set("downloadUrl", e.target.value)}
+                      placeholder="/downloads/file.pdf or https://…" className="input font-mono text-sm" />
+                  </Field>
+                  <Field label="Preview Image" hint="Picture of the file, e.g. /downloads/checklist-preview.webp"
+                    hintRed={Boolean(form.downloadImage) && !safeDownloadUrl(form.downloadImage)}>
+                    <input value={form.downloadImage} onChange={(e) => set("downloadImage", e.target.value)}
+                      placeholder="/downloads/file-preview.webp" className="input font-mono text-sm" />
+                  </Field>
+                  <Field label="Small Heading">
+                    <input value={form.downloadEyebrow} onChange={(e) => set("downloadEyebrow", e.target.value)}
+                      placeholder="Free printable · PDF · 1 page" className="input" />
+                  </Field>
+                  <Field label="Title">
+                    <input value={form.downloadLabel} onChange={(e) => set("downloadLabel", e.target.value)}
+                      placeholder="Download the Diwali Cleaning Checklist 2026" className="input" />
+                  </Field>
+                </div>
+                <Field label="Description">
+                  <textarea rows={2} value={form.downloadDescription} onChange={(e) => set("downloadDescription", e.target.value)}
+                    placeholder="What the file contains and how to use it" className="input" />
                 </Field>
-                <Field label="Download Button Text">
-                  <input value={form.downloadLabel} onChange={(e) => set("downloadLabel", e.target.value)}
-                    placeholder="e.g. Download the printable Diwali checklist (PDF)" className="input" />
-                </Field>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Button Text">
+                    <input value={form.downloadButtonText} onChange={(e) => set("downloadButtonText", e.target.value)}
+                      placeholder="Download free checklist (PDF)" className="input" />
+                  </Field>
+                  <Field label="Note Under Button">
+                    <input value={form.downloadNote} onChange={(e) => set("downloadNote", e.target.value)}
+                      placeholder="Print tip: choose A4 and “Actual size”." className="input" />
+                  </Field>
+                </div>
+              </fieldset>
               <Field label="Tags">
                 <div className="flex flex-wrap gap-2 mb-2">
                   {(form.tags || []).map((t) => (
@@ -500,7 +541,7 @@ export default function BlogManager({ brand, brandConfig }) {
                 )}
               </div>
               <div className="border-2 border-indigo-100 rounded-2xl overflow-hidden bg-white shadow-sm" style={{ maxHeight: "70vh", overflowY: "auto" }}>
-                <BlogDetailLayout blog={buildPreviewBlog(form, brandConfig?.name)} allPosts={[]} />
+                <BlogDetailLayout blog={buildPreviewBlog(form, brandConfig?.name, brandConfig?.siteUrl)} allPosts={[]} />
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 <select value={form.status} onChange={(e) => set("status", e.target.value)} className="input w-auto">

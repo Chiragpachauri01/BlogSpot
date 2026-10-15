@@ -115,25 +115,44 @@ function MetaLine({ blog }) {
   );
 }
 
-// Optional CMS download (e.g. a printable checklist PDF), shown above the article.
+// Optional CMS download card (e.g. the printable Diwali checklist PDF), shown
+// above the article. Only downloadUrl is required; every text has a default.
+// Preview image: thumbnail of the file (left on desktop, on top on mobile).
 function DownloadBox({ blog }) {
   const url = safeDownloadUrl(blog.downloadUrl);
   if (!url) return null;
-  const isPdf = /\.pdf(?:$|[?#])/i.test(url);
-  const label = blog.downloadLabel || (isPdf ? "Download the printable version (PDF)" : "Download");
+  const isPdf   = /\.pdf(?:$|[?#])/i.test(url);
+  const image   = safeDownloadUrl(blog.downloadImage);
+  const eyebrow = blog.downloadEyebrow     || (isPdf ? "Free printable · PDF" : "Free download");
+  const title   = blog.downloadLabel       || (isPdf ? "Download the printable version" : "Download");
+  const button  = blog.downloadButtonText  || (isPdf ? "Download free PDF" : "Download");
+  const linkProps = { href: url, target: "_blank", rel: "noopener", ...(isPdf && { download: "" }) };
+
   return (
-    <aside aria-label="Download" className="my-8 flex flex-col gap-4 rounded-2xl border border-teal-100 bg-teal-50 p-5 sm:flex-row sm:items-center sm:p-6">
+    <aside aria-label={title}
+      className="my-10 flex flex-col gap-6 rounded-3xl border-2 border-[#f5a524] bg-[#fdf6ec] p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8">
+      {image && (
+        <a {...linkProps} tabIndex={-1} aria-hidden="true"
+          className="mx-auto block w-48 shrink-0 sm:mx-0 sm:w-40 md:w-48">
+          {/* eslint-disable-next-line @next/next/no-img-element -- CMS URL; host may not be in images.remotePatterns */}
+          <img src={image} alt="" width={600} height={847} loading="lazy" decoding="async"
+            className="h-auto w-full rounded-xl shadow-lg ring-1 ring-black/5" />
+        </a>
+      )}
       <div className="min-w-0 flex-1">
-        <p className="font-bold text-gray-900">{label}</p>
-        <p className="mt-1 text-sm text-gray-600">Free to download{isPdf ? " and print" : ""}.</p>
+        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#f26b1d] sm:text-sm">{eyebrow}</p>
+        <p className="mt-2 text-2xl font-black leading-tight tracking-tight text-[#0f2a47] sm:text-3xl">{title}</p>
+        {blog.downloadDescription && (
+          <p className="mt-3 text-base leading-relaxed text-slate-600 sm:text-lg">{blog.downloadDescription}</p>
+        )}
+        <a {...linkProps}
+          className="mt-5 flex w-full items-center justify-center rounded-full bg-[#f26b1d] px-5 py-3.5 text-center text-base font-bold text-white shadow-sm transition-colors hover:bg-[#d95a12] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f26b1d] sm:inline-flex sm:w-auto sm:px-7 sm:text-lg">
+          {button}
+        </a>
+        {blog.downloadNote && (
+          <p className="mt-4 text-sm leading-relaxed text-slate-500">{blog.downloadNote}</p>
+        )}
       </div>
-      <a href={url} target="_blank" rel="noopener" {...(isPdf && { download: "" })}
-        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-700">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-          <path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M2.5 13.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        Download{isPdf ? " PDF" : ""}
-      </a>
     </aside>
   );
 }
