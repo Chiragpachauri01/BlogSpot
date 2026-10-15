@@ -2,9 +2,11 @@
 
 import React from "react";
 import { wrapTables } from "./BlogUtils";
+import { InlineDownloadCard } from "./DownloadCard";
 import ContactCTA from "./ContactCTA";
 
 const COMPONENT_MAP = {
+  DownloadCard: InlineDownloadCard,
   ContactCTA: ContactCTA,
 };
 

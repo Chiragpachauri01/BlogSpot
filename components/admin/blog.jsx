@@ -452,7 +452,8 @@ export default function BlogManager({ brand, brandConfig }) {
                   <textarea rows={2} value={form.downloadDescription} onChange={(e) => set("downloadDescription", e.target.value)}
                     placeholder="What the file contains and how to use it" className="input" />
                 </Field>
-                <Field label="Card Position">
+                <Field label="Card Position"
+                  hint="To place it anywhere else, insert a “Download Card” block in the content (⚡ Component menu in the editor) — that spot then replaces this setting.">
                   <select value={form.downloadPosition} onChange={(e) => set("downloadPosition", e.target.value)} className="input w-auto">
                     <option value="top">Above the article</option>
                     <option value="bottom">Below the article</option>
