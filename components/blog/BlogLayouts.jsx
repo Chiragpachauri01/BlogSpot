@@ -23,7 +23,7 @@ import Image from "next/image";
 import Link  from "next/link";
 import {
   generateTOC, getRelatedPosts, formatDate, calcReadingTime,
-  splitIntoSections,
+  splitIntoSections, isMeaningfullyUpdated, safeDownloadUrl,
 } from "./BlogUtils";
 import BlogCard            from "./BlogCard";
 import ShareBar            from "./SharebBar";
@@ -79,17 +79,85 @@ function TagPill({ tag }) {
   );
 }
 
+// ─── Author / freshness helpers ───────────────────────────────────────────────
+// Author fields are optional in the CMS; fall back to the organisation.
+function orgName(blog) {
+  return blog.orgName || "Shark Web Digital";
+}
+
+function authorName(blog) {
+  return blog.authorName || orgName(blog);
+}
+
+// "Updated <date>" only when the post changed more than a day after publishing.
+function updatedDate(blog) {
+  return isMeaningfullyUpdated(blog.createdAt, blog.updatedAt)
+    ? formatDate(blog.updatedAt, "long")
+    : "";
+}
+
 function MetaLine({ blog }) {
-  const date = formatDate(blog.createdAt, "long");
-  const rt   = blog.readingTime ?? calcReadingTime(blog.content || "");
+  const date    = formatDate(blog.createdAt, "long");
+  const updated = updatedDate(blog);
+  const rt      = blog.readingTime ?? calcReadingTime(blog.content || "");
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 font-medium">
       {date && <time dateTime={blog.createdAt}>{date}</time>}
+      {updated && <><span aria-hidden>·</span><span>Updated <time dateTime={blog.updatedAt}>{updated}</time></span></>}
       {date && <span aria-hidden>·</span>}
-      <span>By Shark Web Digital</span>
+      <span>
+        By <span className="text-gray-800">{authorName(blog)}</span>
+        {blog.authorName && blog.authorRole && <>, {blog.authorRole}</>}
+      </span>
       <span aria-hidden>·</span>
       <span>{rt} min read</span>
     </div>
+  );
+}
+
+// Optional CMS download (e.g. a printable checklist PDF), shown above the article.
+function DownloadBox({ blog }) {
+  const url = safeDownloadUrl(blog.downloadUrl);
+  if (!url) return null;
+  const isPdf = /\.pdf(?:$|[?#])/i.test(url);
+  const label = blog.downloadLabel || (isPdf ? "Download the printable version (PDF)" : "Download");
+  return (
+    <aside aria-label="Download" className="my-8 flex flex-col gap-4 rounded-2xl border border-teal-100 bg-teal-50 p-5 sm:flex-row sm:items-center sm:p-6">
+      <div className="min-w-0 flex-1">
+        <p className="font-bold text-gray-900">{label}</p>
+        <p className="mt-1 text-sm text-gray-600">Free to download{isPdf ? " and print" : ""}.</p>
+      </div>
+      <a href={url} target="_blank" rel="noopener" {...(isPdf && { download: "" })}
+        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-teal-700">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+          <path d="M8 2v8m0 0L4.5 6.5M8 10l3.5-3.5M2.5 13.5h11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        Download{isPdf ? " PDF" : ""}
+      </a>
+    </aside>
+  );
+}
+
+function AuthorBox({ blog }) {
+  const hasAuthor = Boolean(blog.authorName);
+  const name      = authorName(blog);
+  const role      = hasAuthor ? blog.authorRole : "";
+  const bio       = hasAuthor ? blog.authorBio : "";
+  const initials  = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  return (
+    <aside aria-label="About the author" className="mb-8 flex gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-5 sm:p-6">
+      <div aria-hidden className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-600 text-sm font-black text-white">
+        {initials}
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Written by</p>
+        <p className="mt-1 font-bold text-gray-900">
+          {name}
+          {role && <span className="font-medium text-gray-600"> · {role}</span>}
+        </p>
+        {bio && <p className="mt-2 text-sm leading-relaxed text-gray-600">{bio}</p>}
+      </div>
+    </aside>
   );
 }
 
@@ -111,6 +179,7 @@ function BlogFooter({ blog, url }) {
   const tags = blog.tags || [];
   return (
     <footer className="mt-12 pt-8 border-t border-gray-100">
+      <AuthorBox blog={blog} />
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
           <span className="text-xs font-semibold text-gray-600 uppercase tracking-widest self-center mr-1">Tags</span>
@@ -187,6 +256,7 @@ function DefaultLayout({ blog, allPosts }) {
       <div className={`${hasSidebar ? "max-w-6xl flex gap-10 items-start" : "max-w-3xl"} mx-auto px-4 sm:px-6 pb-8`}>
         {hasSidebar && <TableOfContents toc={toc} position="sidebar" />}
         <div className={hasSidebar ? "flex-1 min-w-0" : undefined}>
+          <DownloadBox blog={blog} />
           <section aria-label="Article content">
             <ContentBlock html={blog.content || ""} />
           </section>
@@ -235,6 +305,7 @@ function MinimalLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-8" />
         )}
+        <DownloadBox blog={blog} />
         <section aria-label="Article content">
           <ContentBlock html={blog.content || ""} />
         </section>
@@ -255,6 +326,7 @@ function MagazineLayout({ blog, allPosts }) {
   const canonical = blog.seo?.canonicalUrl || `/blog/${blog.slug}`;
   const toc       = useTOC(blog);
   const date      = formatDate(blog.createdAt, "long");
+  const updated   = updatedDate(blog);
   const rt        = blog.readingTime ?? calcReadingTime(blog.content || "");
 
   return (
@@ -281,8 +353,11 @@ function MagazineLayout({ blog, allPosts }) {
           )}
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.05] tracking-tight max-w-4xl mb-5">{blog.title}</h1>
           {blog.excerpt && <p className="text-base sm:text-lg text-gray-300 max-w-2xl leading-relaxed mb-6">{blog.excerpt}</p>}
-          <div className="flex items-center gap-3 text-sm text-gray-600 font-medium">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-300 font-medium">
             {date && <time dateTime={blog.createdAt}>{date}</time>}
+            {updated && <><span aria-hidden>·</span><span>Updated <time dateTime={blog.updatedAt}>{updated}</time></span></>}
+            <span aria-hidden>·</span>
+            <span>By {authorName(blog)}</span>
             <span aria-hidden>·</span>
             <span>{rt} min read</span>
           </div>
@@ -297,6 +372,7 @@ function MagazineLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-8" />
         )}
+        <DownloadBox blog={blog} />
         <section aria-label="Article content">
           <ContentBlock html={blog.content || ""} />
         </section>
@@ -353,6 +429,7 @@ function DocsLayout({ blog, allPosts }) {
                 sizes="(max-width: 1280px) 100vw, 900px" className="object-contain" />
             </div>
           )}
+          <DownloadBox blog={blog} />
           <section aria-label="Article content">
             <ContentBlock html={blog.content || ""} />
           </section>
@@ -403,6 +480,7 @@ function CardsLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-6" />
         )}
+        <DownloadBox blog={blog} />
         <div className="space-y-5">
           {sections.map((section, i) => (
             <article key={i} id={section.id || undefined}
@@ -468,9 +546,12 @@ function HeroLayout({ blog, allPosts }) {
           )}
           <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-white leading-[1.0] tracking-tight mb-5 max-w-4xl">{blog.title}</h1>
           {blog.excerpt && <p className="text-base sm:text-xl text-white/70 max-w-2xl leading-relaxed mb-7">{blog.excerpt}</p>}
-          <p className="text-base sm:text-xl text-white/50 mb-7">By Shark Web Digital</p>
-          <div className="flex items-center gap-4 text-sm text-white/50 font-medium">
-            <time>{formatDate(blog.createdAt, "long")}</time>
+          <p className="text-base sm:text-xl text-white/50 mb-7">
+            By {authorName(blog)}{blog.authorName && blog.authorRole && <>, {blog.authorRole}</>}
+          </p>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-white/50 font-medium">
+            <time dateTime={blog.createdAt}>{formatDate(blog.createdAt, "long")}</time>
+            {updatedDate(blog) && <><span aria-hidden>·</span><span>Updated <time dateTime={blog.updatedAt}>{updatedDate(blog)}</time></span></>}
             <span aria-hidden>·</span>
             <span>{blog.readingTime ?? calcReadingTime(blog.content || "")} min read</span>
           </div>
@@ -480,6 +561,7 @@ function HeroLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-10" />
         )}
+        <DownloadBox blog={blog} />
         <section aria-label="Article content">
           <ContentBlock html={blog.content || ""} />
         </section>
@@ -533,6 +615,7 @@ function TimelineLayout({ blog, allPosts }) {
         {blog.showTOC && toc.length > 0 && (
           <TableOfContents toc={toc} position={blog.tocPosition || "inline"} className="mb-8" />
         )}
+        <DownloadBox blog={blog} />
         {intro?.html && (
           <ContentBlock html={intro.html} className="mb-12" />
         )}
