@@ -10,6 +10,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Image from "next/image";
 import { SERVICE_CATEGORIES, LOCATIONS, toSlug } from "@/lib/webstoryTaxonomy";
+import { revalidateSite } from "@/lib/revalidateSite";
 
 // Unique id for slides — Date.now() alone collides when slides are added in
 // the same millisecond, producing duplicate React keys (and "leaking" images
@@ -90,17 +91,7 @@ const slugify = (t) =>
   t.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim().replace(/\s+/g, "-");
 
 // Trigger ISR on the brand site for the web-stories path (mirrors blog.jsx).
-const revalidateStory = async (brand, slug) => {
-  try {
-    await fetch("/api/revalidate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ brand, slug, type: "webstory", secret: process.env.NEXT_PUBLIC_REVALIDATE_SECRET }),
-    });
-  } catch (err) {
-    console.warn("[revalidate] failed:", err);
-  }
-};
+const revalidateStory = (brand, slug) => revalidateSite({ brand, slug, type: "webstory" });
 
 // brand    — e.g. "shark-web-digital"
 // brandConfig — the BRANDS entry with siteUrl etc.
@@ -250,7 +241,8 @@ export default function WebStoryManager({ brand, brandConfig }) {
     } else {
       await addDoc(collection(db, "webstories"), { ...payload, createdAt: serverTimestamp() });
     }
-    await revalidateStory(brand, form.slug);
+    const failed = await revalidateStory(brand, form.slug);
+    if (failed) alert(`Saved, but the live site didn't update: ${failed}`);
     reset();
     loadStories();
   };
@@ -285,7 +277,9 @@ export default function WebStoryManager({ brand, brandConfig }) {
     if (!confirm("Delete selected?")) return;
     const slugsToInvalidate = ids.map((id) => stories.find((s) => s.id === id)?.slug).filter(Boolean);
     await Promise.all(ids.map((id) => deleteDoc(doc(db, "webstories", id))));
-    await Promise.all(slugsToInvalidate.map((slug) => revalidateStory(brand, slug)));
+    const results = await Promise.all(slugsToInvalidate.map((slug) => revalidateStory(brand, slug)));
+    const failed = results.find(Boolean);
+    if (failed) alert(`Deleted, but the live site didn't update: ${failed}`);
     setSelected([]);
     loadStories();
   };
