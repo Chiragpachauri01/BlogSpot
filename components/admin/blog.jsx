@@ -13,6 +13,7 @@ import Image from "next/image";
 import { BlogDetailLayout } from "@/components/blog/BlogLayouts";
 import { BLOG_LAYOUTS, addIdsToHeadings, safeDownloadUrl } from "@/components/blog/BlogUtils";
 import RichEditor from "@/components/blog/RichEditor";
+import { revalidateSite } from "@/lib/revalidateSite";
 
 const EMPTY_SEO = {
   metaTitle: "", metaDescription: "", focusKeyword: "",
@@ -98,17 +99,7 @@ async function hydrateImages(html, imageMap) {
   return out;
 }
 
-const revalidateBlog = async (brand, slug) => {
-  try {
-    await fetch("/api/revalidate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ brand, slug, secret: process.env.NEXT_PUBLIC_REVALIDATE_SECRET }),
-    });
-  } catch (err) {
-    console.warn("[revalidate] failed:", err);
-  }
-};
+const revalidateBlog = (brand, slug) => revalidateSite({ brand, slug });
 
 // Site-relative paths ("/downloads/x.pdf") live on the public site, not on
 // Blog Master, so resolve them against the brand's siteUrl for the preview.
@@ -230,7 +221,8 @@ export default function BlogManager({ brand, brandConfig }) {
     } else {
       await addDoc(collection(db, "blogs"), { ...payload, createdAt: serverTimestamp() });
     }
-    await revalidateBlog(brand, form.slug);
+    const failed = await revalidateBlog(brand, form.slug);
+    if (failed) alert(`Saved, but the live site didn't update: ${failed}`);
     reset();
     loadBlogs();
   };
@@ -260,7 +252,9 @@ export default function BlogManager({ brand, brandConfig }) {
     if (!confirm("Delete selected?")) return;
     const slugsToInvalidate = ids.map((id) => blogs.find((b) => b.id === id)?.slug).filter(Boolean);
     await Promise.all(ids.map((id) => deleteDoc(doc(db, "blogs", id))));
-    await Promise.all(slugsToInvalidate.map((slug) => revalidateBlog(brand, slug)));
+    const results = await Promise.all(slugsToInvalidate.map((slug) => revalidateBlog(brand, slug)));
+    const failed = results.find(Boolean);
+    if (failed) alert(`Deleted, but the live site didn't update: ${failed}`);
     setSelected([]);
     loadBlogs();
   };
